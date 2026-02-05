@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zr.user_service.domain.dto.UserDto;
+import org.zr.user_service.exception.UserNotFoundException;
 import org.zr.user_service.service.UserService;
 
 @RestController
@@ -36,7 +37,7 @@ public class UserController {
         try {
             userService.updateUser(id, userDto);
             return ResponseEntity.ok("user updated successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (UserNotFoundException e) {
             return new ResponseEntity<>("user not found", HttpStatus.NOT_FOUND);
         }
     }
@@ -46,7 +47,7 @@ public class UserController {
         try {
             userService.deleteUser(id);
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
+        } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }

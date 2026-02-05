@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.zr.user_service.domain.dto.UserDto;
 import org.zr.user_service.domain.entity.User;
+import org.zr.user_service.exception.UserNotFoundException;
 import org.zr.user_service.repository.UserRepository;
 
 @Service
@@ -38,7 +39,7 @@ public class UserService {
 
     public void updateUser(Long id, UserDto input) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new UserNotFoundException("user not found"));
 
         user.setName(input.name());
         user.setSurname(input.surname());
@@ -51,7 +52,7 @@ public class UserService {
 
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new UserNotFoundException("user not found"));
         userRepository.delete(user);
     }
 

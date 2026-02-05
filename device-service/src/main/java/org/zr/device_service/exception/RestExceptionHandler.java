@@ -1,0 +1,14 @@
+package org.zr.device_service.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+@ControllerAdvice
+public class RestExceptionHandler {
+    @ExceptionHandler(DeviceNotFoundException.class)
+    public ResponseEntity<String> handleDeviceNotFoundException(DeviceNotFoundException e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+    }
+}

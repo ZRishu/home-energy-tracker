@@ -1,0 +1,29 @@
+package org.zr.device_service.aspect;
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+
+@Component
+@Aspect
+@Slf4j
+public class LoggingAspect {
+    @Pointcut("execution(* org.zr.device_service.service.*.*(..))")
+    public void serviceMethods() {
+    }
+
+    @Before("serviceMethods()")
+    public void logBefore(JoinPoint joinPoint) {
+        log.info("called service method: {} with arguments: {}",
+                joinPoint.getSignature().getName(), joinPoint.getArgs());
+    }
+
+    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
+    public void logAfterReturning(JoinPoint joinPoint, Object result) {
+        log.info("service method: {} result: {}", joinPoint.getSignature().getName(), result);
+    }
+}

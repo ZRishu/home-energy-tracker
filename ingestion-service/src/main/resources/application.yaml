@@ -1,3 +1,22 @@
 spring:
   application:
     name: ingestion-service
+
+  # Kafka
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER_URL}
+    template:
+      default-topic: energy-usage
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# Simulator Config
+simulation:
+  interval-ms: 5000
+  request-per-interval: 1000
+  endpoint: ${INGESTION_SERVICE_URL}/api/v1/ingestion
+  parallel-threads: 10
+
+server:
+  port: 8082

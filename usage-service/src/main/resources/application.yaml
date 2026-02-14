@@ -2,6 +2,19 @@ spring:
   application:
     name: usage-service
 
+  # Kafka Consumer
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER_URL}
+    consumer:
+      group-id: usage-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            type:
+              mapping: energyUsageEvent:org.zr.kafka.event.EnergyUsageEvent
+
 # InfluxDB Configuration
 influx:
   url: ${INFLUX_DB_URL}

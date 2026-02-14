@@ -1,3 +1,13 @@
 spring:
   application:
     name: usage-service
+
+# InfluxDB Configuration
+influx:
+  url: ${INFLUX_DB_URL}
+  token: ${INFLUX_DB_TOKEN}
+  org: ${INFLUX_DB_ORG}
+  bucket: ${INFLUX_DB_BUCKET}
+
+server:
+  port: 8083

@@ -12,17 +12,22 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.zr.kafka.event.EnergyUsageEvent;
+import org.zr.usage_service.client.DeviceClient;
+import org.zr.usage_service.dto.DeviceDto;
 import org.zr.usage_service.model.DeviceEnergy;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class UsageService {
 
     private final InfluxDBClient influxDBClient;
+    private final DeviceClient deviceClient;
 
     @Value("${influx.bucket}")
     private String influxBucket;
@@ -30,8 +35,9 @@ public class UsageService {
     @Value("${influx.org}")
     private String influxOrg;
 
-    public UsageService(InfluxDBClient influxDBClient) {
+    public UsageService(InfluxDBClient influxDBClient, DeviceClient deviceClient) {
         this.influxDBClient = influxDBClient;
+        this.deviceClient = deviceClient;
     }
 
     @KafkaListener(topics = "energy-usage", groupId = "usage-service")
@@ -79,5 +85,24 @@ public class UsageService {
             }
         }
         log.info("Aggregated device energies over the past hour: {}", deviceEnergies);
+
+        for (DeviceEnergy deviceEnergy : deviceEnergies) {
+            DeviceDto deviceResponse = deviceClient.getDeviceById(deviceEnergy.getDeviceId());
+            if (deviceResponse == null || deviceResponse.id() == null) {
+                log.warn("Device not found with ID: {}", deviceEnergy.getDeviceId());
+                continue;
+            }
+            deviceEnergy.setDeviceId(deviceResponse.id());
+        }
+
+        // Remove devices with null userId
+        deviceEnergies.removeIf(deviceEnergy -> deviceEnergy.getUserId() == null);
+
+        // Get user-device mapping and aggregate per user
+        Map<Long, List<DeviceEnergy>> userDeviceEnergyMap =
+                deviceEnergies.stream()
+                        .collect(Collectors.groupingBy(DeviceEnergy::getUserId));
+
+        log.info("User-Device Energy Map: {}", userDeviceEnergyMap);
     }
 }

@@ -22,5 +22,9 @@ influx:
   org: ${INFLUX_DB_ORG}
   bucket: ${INFLUX_DB_BUCKET}
 
+device:
+  service:
+    url: ${DEVICE_SERVICE_URL}
+
 server:
   port: 8083

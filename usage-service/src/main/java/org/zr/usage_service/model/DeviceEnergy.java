@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class DeviceEnergy {
-    Long deviceId;
-    double energyConsumed;
-    Long userId;
+    private Long deviceId;
+    private double energyConsumed;
+    private Long userId;
 }

@@ -25,5 +25,17 @@ spring:
     hibernate:
       ddl-auto: none
 
+  # Mailpit SMTP Config
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+
 server:
   port: 8084

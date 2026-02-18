@@ -2,6 +2,19 @@ spring:
   application:
     name: alert-service
 
+  # Kafka Consumer
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER_URL}
+    consumer:
+      group-id: alert-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            type:
+              mapping: alertingEvent:org.zr.kafka.event.alertingEvent
+
   # Postgres Database Config
   datasource:
     url: ${DB_URL}

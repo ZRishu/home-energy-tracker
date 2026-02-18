@@ -100,12 +100,16 @@ public class UsageService {
         log.info("Aggregated device energies over the past hour: {}", deviceEnergies);
 
         for (DeviceEnergy deviceEnergy : deviceEnergies) {
-            DeviceDto deviceResponse = deviceClient.getDeviceById(deviceEnergy.getDeviceId());
-            if (deviceResponse == null || deviceResponse.id() == null) {
+            try {
+                DeviceDto deviceResponse = deviceClient.getDeviceById(deviceEnergy.getDeviceId());
+                if (deviceResponse == null || deviceResponse.id() == null) {
+                    log.warn("Device not found with ID: {}", deviceEnergy.getDeviceId());
+                    continue;
+                }
+                deviceEnergy.setUserId(deviceResponse.userId());
+            } catch (Exception e) {
                 log.warn("Device not found with ID: {}", deviceEnergy.getDeviceId());
-                continue;
             }
-            deviceEnergy.setDeviceId(deviceResponse.id());
         }
 
         // Remove devices with null userId

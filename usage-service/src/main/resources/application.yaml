@@ -15,6 +15,13 @@ spring:
             type:
               mapping: energyUsageEvent:org.zr.kafka.event.EnergyUsageEvent
 
+    # Kafka Producer
+    template:
+      default-topic: energy-alerts
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 # InfluxDB Configuration
 influx:
   url: ${INFLUX_DB_URL}

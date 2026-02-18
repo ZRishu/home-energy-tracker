@@ -9,8 +9,10 @@ import com.influxdb.query.FluxTable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.zr.kafka.event.AlertingEvent;
 import org.zr.kafka.event.EnergyUsageEvent;
 import org.zr.usage_service.client.DeviceClient;
 import org.zr.usage_service.client.UserClient;
@@ -39,10 +41,16 @@ public class UsageService {
     @Value("${influx.org}")
     private String influxOrg;
 
-    public UsageService(InfluxDBClient influxDBClient, DeviceClient deviceClient, UserClient userClient) {
+    private final KafkaTemplate<String, AlertingEvent> kafkaTemplate;
+
+    public UsageService(InfluxDBClient influxDBClient,
+                        DeviceClient deviceClient,
+                        UserClient userClient,
+                        KafkaTemplate<String, AlertingEvent> kafkaTemplate) {
         this.influxDBClient = influxDBClient;
         this.deviceClient = deviceClient;
         this.userClient = userClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @KafkaListener(topics = "energy-usage", groupId = "usage-service")
@@ -129,5 +137,36 @@ public class UsageService {
             }
         }
         log.info("User Threshold Map: {}", userThresholdMap);
+
+        // Check threshold against aggregated usage
+        final List<Long> alertedUsers = new ArrayList<>(userThresholdMap.keySet());
+        for (Long userId : alertedUsers) {
+            final Double threshold = userThresholdMap.get(userId);
+            final List<DeviceEnergy> devices = userDeviceEnergyMap.get(userId);
+            final Double totalConsumption = devices.stream()
+                    .mapToDouble(DeviceEnergy::getEnergyConsumed)
+                    .sum();
+
+            if (totalConsumption > threshold) {
+                log.info("ALERT: User ID {} has exceeded the energy threshold! " +
+                                "Total consumption: {}, Threshold: {}",
+                        userId, totalConsumption, threshold);
+                // Put message on kafka-alert topic
+                final AlertingEvent alertingEvent = AlertingEvent.builder()
+                        .userId(userId)
+                        .message("Energy consumption exceeded")
+                        .threshold(threshold)
+                        .energyConsumed(totalConsumption)
+                        .email(userEmailMap.get(userId))
+                        .build();
+
+                // Send alerting event to kafka topic
+                kafkaTemplate.send("energy-alerts", alertingEvent);
+            } else {
+                log.info("User ID {} is within the energy threshold. " +
+                                "Total Consumption: {}, Threshold: {}",
+                        userId, totalConsumption, threshold);
+            }
+        }
     }
 }

@@ -13,11 +13,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.zr.kafka.event.EnergyUsageEvent;
 import org.zr.usage_service.client.DeviceClient;
+import org.zr.usage_service.client.UserClient;
 import org.zr.usage_service.dto.DeviceDto;
+import org.zr.usage_service.dto.UserDto;
 import org.zr.usage_service.model.DeviceEnergy;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +31,7 @@ public class UsageService {
 
     private final InfluxDBClient influxDBClient;
     private final DeviceClient deviceClient;
+    private final UserClient userClient;
 
     @Value("${influx.bucket}")
     private String influxBucket;
@@ -35,9 +39,10 @@ public class UsageService {
     @Value("${influx.org}")
     private String influxOrg;
 
-    public UsageService(InfluxDBClient influxDBClient, DeviceClient deviceClient) {
+    public UsageService(InfluxDBClient influxDBClient, DeviceClient deviceClient, UserClient userClient) {
         this.influxDBClient = influxDBClient;
         this.deviceClient = deviceClient;
+        this.userClient = userClient;
     }
 
     @KafkaListener(topics = "energy-usage", groupId = "usage-service")
@@ -104,5 +109,25 @@ public class UsageService {
                         .collect(Collectors.groupingBy(DeviceEnergy::getUserId));
 
         log.info("User-Device Energy Map: {}", userDeviceEnergyMap);
+
+        // Get user energy consumption threshold
+        List<Long> userIds = new ArrayList<>(userDeviceEnergyMap.keySet());
+        final Map<Long, Double> userThresholdMap = new HashMap<>();
+        final Map<Long, String> userEmailMap = new HashMap<>();
+
+        for (Long userId : userIds) {
+            try {
+                UserDto user = userClient.getUserById(userId);
+                if (user == null || user.id() == null || !user.alerting()) {
+                    log.warn("User not found or alerting disabled for ID: {}", userId);
+                    continue;
+                }
+                userThresholdMap.put(userId, user.energyAlertingThreshold());
+                userEmailMap.put(userId, user.email());
+            } catch (Exception e) {
+                log.warn("Failed to fetch user for ID: {}", userId);
+            }
+        }
+        log.info("User Threshold Map: {}", userThresholdMap);
     }
 }

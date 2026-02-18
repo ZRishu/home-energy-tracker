@@ -25,6 +25,9 @@ influx:
 device:
   service:
     url: ${DEVICE_SERVICE_URL}
+user:
+  service:
+    url: ${USER_SERVICE_URL}
 
 server:
   port: 8083
